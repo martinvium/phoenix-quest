@@ -18,6 +18,10 @@ defmodule PhoenixQuestWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+
+    live_session :game, root_layout: {PhoenixQuestWeb.LayoutView, :game} do
+      live "/game", GameLive
+    end
   end
 
   # Other scopes may use custom stacks.
