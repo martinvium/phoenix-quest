@@ -91,13 +91,16 @@ body.game {
 }
 .game-container .block.monster{
   z-index: 2;
-  background: red;
+  background: #4E4F50;
 }
 .game-container .block.wall{
-  background: blue;
+  background: #647C90;
+}
+.game-container .block.room{
+  background: brown;
 }
 .game-container .block.empty{
-  background: #000000;
+  background: #E2DED0;
 }
 
 .game-top{

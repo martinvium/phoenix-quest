@@ -5,8 +5,8 @@ https://steamcommunity.com/sharedfiles/filedetails/?id=420985267
 
 ## MVP
 render rooms/tiles
-render player
-allow player movement
+support collisions?
+basic styling
 
 ## First version
 render the first room (chest/furniture)
