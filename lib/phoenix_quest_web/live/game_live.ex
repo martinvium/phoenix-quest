@@ -5,42 +5,42 @@ defmodule PhoenixQuestWeb.GameLive do
   use PhoenixQuestWeb, :live_view
 
   @width 30
+  # legend: S -> :stairway
 
   @board [
-    ~w(X X X X X X X X X X X X X X X X X X X X X X X X X X X X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 X X X X X X X X X X X 0 0 X X X X X X X X X X X 0 X),
-    ~w(X 0 X R R R R X R R R R X 0 0 X R R R R R X R R R X 0 X),
-    ~w(X 0 R R R R R X R R R R X 0 0 X R R R R R X R R R X 0 X),
-    ~w(X 0 X R R R R X R R R R X 0 0 X R R R R R X R R R X 0 X),
-    ~w(X 0 X R R R R X R R R R X 0 0 X R R R R R X R R R X 0 X),
-    ~w(X 0 X R R R R X R R R R X 0 0 X R R R R R X R R R X 0 X),
-    ~w(X 0 X X X X X X X X X X X 0 0 X X X X X X X X X X X 0 X),
-    ~w(X 0 X R R R R R X R R R X 0 0 X R R R R R X R R R X 0 X),
-    ~w(X 0 X R R R R R X R R R X 0 0 X R R R R R X R R R X 0 X),
-    ~w(X 0 X R R R R R X R R R X 0 0 X R R R R R X R R R X 0 X),
-    ~w(X 0 X R R R R R X R R R X 0 0 X R R R R R X R R R X 0 X),
-    ~w(X 0 X X X X X X X X X X X 0 0 X X X X X X X X X X X 0 X),
-    ~w(X 0 X R R R R R X 0 0 0 0 0 0 0 0 0 0 X R R R R R X 0 X),
-    ~w(X 0 X R R R R R X 0 X X X X X X X X 0 X R R R R R X 0 X),
-    ~w(X 0 X R R R R R X 0 X R R R R R R X 0 X R R R R R X 0 X),
-    ~w(X 0 X X X X X X X 0 X R R R R R R X 0 X X X X X X X 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 X R R R R R R X 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 X R R R R R R X 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 X R R R R R R X 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 X R R R R R R X 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 X X X X X X X X 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
-    ~w(X X X X X X X X X X X X X X X X X X X X X X X X X X X X)
+    ~w(X X X X X X X X X X X X X X X X X X X X X X X X X X X),
+    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X 0 X),
+    ~w(X 0 X X X X X X X X R X X 0 X X X X X X X X X X X 0 X),
+    ~w(X 0 X R R S S X R R R R X 0 X R F F F R X R R R X 0 X),
+    ~w(X 0 X R R S S X R R R R X 0 X R F F F R X R R R X 0 X),
+    ~w(X 0 R R R R R X R F F F X 0 R R R R R R R R R R X 0 X),
+    ~w(X 0 X R R R R X R F F F X 0 X R R R R R X R R R X 0 X),
+    ~w(X 0 X X X X X X X X X X X 0 X X X X R X X X R X X 0 X),
+    ~w(X 0 X F F F R F X R R R X 0 X R R R R R X R R R X 0 X),
+    ~w(X 0 X F F F R F X R R R X 0 X R R R R R X R R R X 0 X),
+    ~w(X 0 R R R R R F X R R R X 0 X R R R R R X R R R X 0 X),
+    ~w(X 0 X R R R R R X R R R X 0 X R R R R R X R R R X 0 X),
+    ~w(X 0 X X X X X X X X X X X 0 X X X X X X X X X X X 0 X),
+    ~w(X 0 X R R R R R X 0 0 0 0 0 0 0 0 0 X R R R R R X 0 X),
+    ~w(X 0 X R R R R R X 0 X X X X X X X 0 X R R R R R X 0 X),
+    ~w(X 0 X F F F R R X 0 X R R R R R X 0 X R R R R R X 0 X),
+    ~w(X 0 X X X X X X X 0 X R R R R R X 0 X X X X X X X 0 X),
+    ~w(X 0 0 0 0 0 0 0 0 0 X R R R R R X 0 X 0 0 0 0 0 0 0 X),
+    ~w(X 0 0 0 0 0 0 0 0 0 X R R R R R X 0 X 0 0 0 0 0 0 0 X),
+    ~w(X 0 X X X X X X X 0 X R R R R R X 0 X X X X X X X 0 X),
+    ~w(X 0 X 0 0 0 0 0 X 0 X R R R R R X 0 X 0 0 0 0 0 X 0 X),
+    ~w(X 0 X 0 0 0 0 0 X 0 X X X X X X X 0 X 0 0 0 0 0 X 0 X),
+    ~w(X 0 X 0 0 0 0 0 X 0 0 0 0 0 0 0 0 0 X 0 0 0 0 0 X 0 X),
+    ~w(X 0 X 0 0 0 0 0 X X X X X 0 X X X X X X X X X X X 0 X),
+    ~w(X 0 X 0 0 0 0 0 0 0 0 0 X 0 X 0 0 0 0 0 0 0 0 0 X 0 X),
+    ~w(X 0 X 0 0 0 0 0 0 0 0 0 X 0 X 0 0 0 0 0 0 0 0 0 X 0 X),
+    ~w(X 0 X 0 0 0 0 0 0 0 0 0 X 0 X 0 0 0 0 0 0 0 0 0 X 0 X),
+    ~w(X 0 X 0 0 0 0 0 0 0 0 0 X 0 X 0 0 0 0 0 0 0 0 0 X 0 X),
+    ~w(X 0 X 0 0 0 0 0 0 0 0 0 X 0 X 0 0 0 0 0 0 0 0 0 X 0 X),
+    ~w(X 0 X 0 0 0 0 0 0 0 0 0 X 0 X 0 0 0 0 0 0 0 0 0 X 0 X),
+    ~w(X 0 X X X X X X X X X X X 0 X X X X X X X X X X X 0 X),
+    ~w(X 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 X),
+    ~w(X X X X X X X X X X X X X X X X X X X X X X X X X X X)
   ]
   @board_rows length(@board)
   @board_cols length(hd(@board))
@@ -103,7 +103,6 @@ defmodule PhoenixQuestWeb.GameLive do
     socket
     |> assign(defaults)
     |> build_board()
-    # |> build_units()
   end
 
   def handle_event("update_settings", %{"width" => width}, socket) do
@@ -169,7 +168,9 @@ defmodule PhoenixQuestWeb.GameLive do
     Logger.debug "#{maybe_row}, #{maybe_col}: #{get_tile_type(socket, maybe_row, maybe_col)}"
     {row, col, collision} =
       case get_tile_type(socket, maybe_row, maybe_col) do
-        :wall -> {maybe_row, maybe_col, :wall}
+        :wall -> {row_before, col_before, :wall}
+        :stairway -> {maybe_row, maybe_col, :stairway}
+        :furnature -> {row_before, col_before, :furnature}
         :unit -> {maybe_row, maybe_col, :unit}
         :empty -> {maybe_row, maybe_col, :empty}
         :room -> {maybe_row, maybe_col, :room}
@@ -195,7 +196,9 @@ defmodule PhoenixQuestWeb.GameLive do
     assign(socket, :units, units)
   end
 
-  def handle_collision(socket, :wall), do: game_over(socket)
+  def handle_collision(socket, :wall), do: socket
+  def handle_collision(socket, :stairway), do: game_over(socket)
+  def handle_collision(socket, :furnature), do: socket
   def handle_collision(socket, :unit), do: game_over(socket)
   def handle_collision(socket, :empty), do: socket
   def handle_collision(socket, :room), do: socket
@@ -235,6 +238,12 @@ defmodule PhoenixQuestWeb.GameLive do
             "R", {x_idx, acc} ->
               {x_idx + 1, Map.put(acc, {y_idx, x_idx}, room(x_idx, y_idx, width))}
 
+            "S", {x_idx, acc} ->
+              {x_idx + 1, Map.put(acc, {y_idx, x_idx}, stairway(x_idx, y_idx, width))}
+
+            "F", {x_idx, acc} ->
+              {x_idx + 1, Map.put(acc, {y_idx, x_idx}, furnature(x_idx, y_idx, width))}
+
             "0", {x_idx, acc} ->
               {x_idx + 1, Map.put(acc, {y_idx, x_idx}, empty(x_idx, y_idx, width))}
           end)
@@ -263,5 +272,13 @@ defmodule PhoenixQuestWeb.GameLive do
 
   defp room(x_idx, y_idx, width) do
     %{type: :room, x: x_idx * width, y: y_idx * width, width: width}
+  end
+
+  defp stairway(x_idx, y_idx, width) do
+    %{type: :stairway, x: x_idx * width, y: y_idx * width, width: width}
+  end
+
+  defp furnature(x_idx, y_idx, width) do
+    %{type: :furnature, x: x_idx * width, y: y_idx * width, width: width}
   end
 end

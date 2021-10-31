@@ -96,8 +96,14 @@ body.game {
 .game-container .block.wall{
   background: #647C90;
 }
+.game-container .block.stairway{
+  background: purple;
+}
 .game-container .block.room{
   background: brown;
+}
+.game-container .block.furnature{
+  background: black;
 }
 .game-container .block.empty{
   background: #E2DED0;
