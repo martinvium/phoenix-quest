@@ -212,7 +212,7 @@ defmodule PhoenixQuestWeb.GameLive do
 
   def get_tile_type(socket, row, col) do
     cond do
-      %{y: row, x: col} in socket.assigns.units -> :unit
+      Enum.any?(socket.assigns.units, &(&1.x == col && &1.y == row)) -> :unit
       true -> Map.fetch!(socket.assigns.blocks, {row, col}).type
     end
   end
