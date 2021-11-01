@@ -4,11 +4,14 @@
 https://steamcommunity.com/sharedfiles/filedetails/?id=420985267
 
 ## First version
-render the first room (chest/furniture)
-allow player action after movement
+add movement constraints (2x6 roll max)
+allow player action
+combat?
+improve furnature
+
+## Multiplayer
 allow next player movement
 (repeat)
-
 
 ## Coming later...
 spells?

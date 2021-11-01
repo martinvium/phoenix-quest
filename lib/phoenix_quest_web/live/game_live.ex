@@ -65,12 +65,20 @@ defmodule PhoenixQuestWeb.GameLive do
       </form>
     </div>
     <div class="game-container" phx-window-keydown="keydown">
-      <%= for unit <- @units do %>
-        <div class={"block #{unit.type}"}
-            style={"left: #{x(unit.x, @width)}px;
-                    top: #{y(unit.y, @width)}px;
-                    width: #{unit.width}px;
-                    height: #{unit.width}px;"}
+      <%= for player <- @players do %>
+        <div class={"block #{player.type}"}
+            style={"left: #{x(player.x, @width)}px;
+                    top: #{y(player.y, @width)}px;
+                    width: #{player.width}px;
+                    height: #{player.width}px;"}
+        ></div>
+      <% end %>
+      <%= for monster <- @monsters do %>
+        <div class={"block #{monster.type}"}
+            style={"left: #{x(monster.x, @width)}px;
+                    top: #{y(monster.y, @width)}px;
+                    width: #{monster.width}px;
+                    height: #{monster.width}px;"}
         ></div>
       <% end %>
       <%= for {_, block} <- @blocks, block.type do %>
@@ -97,7 +105,9 @@ defmodule PhoenixQuestWeb.GameLive do
       width: @width,
       row: 6,
       col: 6,
-      units: [player(6, 6), monster(5, 10), monster(1, 7)]
+      current_player: 0,
+      monsters: [monster(5, 10), monster(1, 7)],
+      players: [player(6, 6)]
     }
 
     socket
@@ -138,7 +148,20 @@ defmodule PhoenixQuestWeb.GameLive do
   defp turn(socket, "ArrowDown"), do: go(socket, :down)
   defp turn(socket, "ArrowUp"), do: go(socket, :up)
   defp turn(socket, "ArrowRight"), do: go(socket, :right)
+  defp turn(socket, "1"), do: attack(socket)
+  defp turn(socket, "2"), do: cast_spell(socket)
+  defp turn(socket, "3"), do: search_treasure(socket)
+  defp turn(socket, "4"), do: search_secret_doors(socket)
+  defp turn(socket, "5"), do: search_traps(socket)
+  defp turn(socket, "6"), do: disarm_trap(socket)
   defp turn(socket, _), do: socket
+
+  defp attack(socket), do: socket
+  defp cast_spell(socket), do: socket
+  defp search_treasure(socket), do: socket
+  defp search_secret_doors(socket), do: socket
+  defp search_traps(socket), do: socket
+  defp disarm_trap(socket), do: socket
 
   defp go(socket, heading) do
     update(socket, :pending_headings, fn
@@ -171,7 +194,8 @@ defmodule PhoenixQuestWeb.GameLive do
         :wall -> {row_before, col_before, :wall}
         :stairway -> {maybe_row, maybe_col, :stairway}
         :furnature -> {row_before, col_before, :furnature}
-        :unit -> {maybe_row, maybe_col, :unit}
+        :player -> {row_before, col_before, :player}
+        :monster -> {maybe_row, maybe_col, :monster}
         :empty -> {maybe_row, maybe_col, :empty}
         :room -> {maybe_row, maybe_col, :room}
       end
@@ -188,18 +212,19 @@ defmodule PhoenixQuestWeb.GameLive do
   defp move_player(socket, {row, row}, {col, col}), do: socket
 
   defp move_player(socket, {_row_before, row}, {_col_before, col}) do
-    units = Enum.reduce(socket.assigns.units, [], fn
-      %{ type: :player } = unit, acc -> [%{unit | y: row, x: col} | acc]
-      unit, acc -> [unit | acc]
+    players = Enum.reduce(socket.assigns.players, [], fn
+      %{ type: :player } = player, acc -> [%{player | y: row, x: col} | acc]
+      player, acc -> [player | acc]
     end)
 
-    assign(socket, :units, units)
+    assign(socket, :players, players)
   end
 
   def handle_collision(socket, :wall), do: socket
   def handle_collision(socket, :stairway), do: game_over(socket)
   def handle_collision(socket, :furnature), do: socket
-  def handle_collision(socket, :unit), do: game_over(socket)
+  def handle_collision(socket, :monster), do: game_over(socket)
+  def handle_collision(socket, :player), do: socket
   def handle_collision(socket, :empty), do: socket
   def handle_collision(socket, :room), do: socket
 
@@ -215,7 +240,8 @@ defmodule PhoenixQuestWeb.GameLive do
 
   def get_tile_type(socket, row, col) do
     cond do
-      Enum.any?(socket.assigns.units, &(&1.x == col && &1.y == row)) -> :unit
+      Enum.any?(socket.assigns.players, &(&1.x == col && &1.y == row)) -> :player
+      Enum.any?(socket.assigns.monsters, &(&1.x == col && &1.y == row)) -> :monster
       true -> Map.fetch!(socket.assigns.blocks, {row, col}).type
     end
   end
