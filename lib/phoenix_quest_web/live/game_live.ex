@@ -100,12 +100,13 @@ defmodule PhoenixQuestWeb.GameLive do
   defp new_game(socket) do
     defaults = %{
       game_state: :playing,
-      heading: :stationary,
-      pending_headings: {:stationary, []},
+      commands: [],
       width: @width,
       row: 6,
       col: 6,
       current_player: 0,
+      moves: [],
+      move_roll: 0,
       monsters: [monster(5, 10), monster(1, 7)],
       players: [player(6, 6)]
     }
@@ -132,7 +133,7 @@ defmodule PhoenixQuestWeb.GameLive do
   def handle_event("keydown", %{"key" => key}, socket) do
     new_socket =
       socket
-      |> turn(key)
+      |> keydown(key)
       |> game_loop()
 
     {:noreply, new_socket}
@@ -144,17 +145,17 @@ defmodule PhoenixQuestWeb.GameLive do
     |> build_board()
   end
 
-  defp turn(socket, "ArrowLeft"), do: go(socket, :left)
-  defp turn(socket, "ArrowDown"), do: go(socket, :down)
-  defp turn(socket, "ArrowUp"), do: go(socket, :up)
-  defp turn(socket, "ArrowRight"), do: go(socket, :right)
-  defp turn(socket, "1"), do: attack(socket)
-  defp turn(socket, "2"), do: cast_spell(socket)
-  defp turn(socket, "3"), do: search_treasure(socket)
-  defp turn(socket, "4"), do: search_secret_doors(socket)
-  defp turn(socket, "5"), do: search_traps(socket)
-  defp turn(socket, "6"), do: disarm_trap(socket)
-  defp turn(socket, _), do: socket
+  defp keydown(socket, "ArrowLeft"), do: queue_command(socket, :left)
+  defp keydown(socket, "ArrowDown"), do: queue_command(socket, :down)
+  defp keydown(socket, "ArrowUp"), do: queue_command(socket, :up)
+  defp keydown(socket, "ArrowRight"), do: queue_command(socket, :right)
+  defp keydown(socket, "1"), do: attack(socket)
+  defp keydown(socket, "2"), do: cast_spell(socket)
+  defp keydown(socket, "3"), do: search_treasure(socket)
+  defp keydown(socket, "4"), do: search_secret_doors(socket)
+  defp keydown(socket, "5"), do: search_traps(socket)
+  defp keydown(socket, "6"), do: disarm_trap(socket)
+  defp keydown(socket, _), do: socket
 
   defp attack(socket), do: socket
   defp cast_spell(socket), do: socket
@@ -163,30 +164,20 @@ defmodule PhoenixQuestWeb.GameLive do
   defp search_traps(socket), do: socket
   defp disarm_trap(socket), do: socket
 
-  defp go(socket, heading) do
-    update(socket, :pending_headings, fn
-      {^heading, prev} -> {heading, prev}
-      {_, prev} -> {heading, prev ++ [heading]}
+  defp queue_command(socket, command) do
+    update(socket, :commands, fn
+      [^command | rest] -> [command | rest]
+      rest -> rest ++ [command]
     end)
   end
 
-  defp next_heading(socket) do
-    {next, pending} =
-      case {socket.assigns.heading, socket.assigns.pending_headings} do
-        {current, {_, []}} -> {current, []}
-        {_current, {_, [new | rest]}} -> {new, rest}
-      end
-
-    {next, {next, pending}}
-  end
-
-  defp game_loop(%{assigns: %{pending_headings: {:stationary, []}}} = socket), do: socket
-
   defp game_loop(socket) do
-    {heading, new_pending} = next_heading(socket)
+    [next_command | rest_commands] = socket.assigns.commands
     {row_before, col_before} = coord(socket)
-    maybe_row = row(row_before, heading)
-    maybe_col = col(col_before, heading)
+
+    # only for movement?
+    maybe_row = row(row_before, next_command)
+    maybe_col = col(col_before, next_command)
 
     Logger.debug "#{maybe_row}, #{maybe_col}: #{get_tile_type(socket, maybe_row, maybe_col)}"
     {row, col, collision} =
@@ -204,8 +195,7 @@ defmodule PhoenixQuestWeb.GameLive do
     |> move_player({row_before, row}, {col_before, col})
     |> update(:row, fn _ -> row end)
     |> update(:col, fn _ -> col end)
-    |> update(:heading, fn _ -> heading end)
-    |> update(:pending_headings, fn _ -> new_pending end)
+    |> update(:commands, fn _ -> rest_commands end)
     |> handle_collision(collision)
   end
 
