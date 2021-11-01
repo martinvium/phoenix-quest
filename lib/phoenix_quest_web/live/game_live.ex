@@ -67,6 +67,8 @@ defmodule PhoenixQuestWeb.GameLive do
     <div class="game-container" phx-window-keydown="keydown">
       <%= for player <- @players do %>
         <div class={"block #{player.type}"}
+            phx-click="click_player"
+            phx-value-id={player.id}
             style={"left: #{x(player.x, @width)}px;
                     top: #{y(player.y, @width)}px;
                     width: #{player.width}px;
@@ -75,14 +77,19 @@ defmodule PhoenixQuestWeb.GameLive do
       <% end %>
       <%= for monster <- @monsters do %>
         <div class={"block #{monster.type}"}
+            phx-click="click_monster"
+            phx-value-id={monster.id}
             style={"left: #{x(monster.x, @width)}px;
                     top: #{y(monster.y, @width)}px;
                     width: #{monster.width}px;
                     height: #{monster.width}px;"}
         ></div>
       <% end %>
-      <%= for {_, block} <- @blocks, block.type do %>
+      <%= for {_, block} <- @blocks do %>
         <div class={"block #{block.type}"}
+            phx-click="click_block"
+            phx-value-x={block.x}
+            phx-value-y={block.y}
             style={"left: #{block.x}px;
                     top: #{block.y}px;
                     width: #{block.width}px;
@@ -107,8 +114,8 @@ defmodule PhoenixQuestWeb.GameLive do
       current_player: 0,
       moves: [],
       move_roll: 0,
-      monsters: [monster(5, 10), monster(1, 7)],
-      players: [player(6, 6)]
+      monsters: [monster(1, 5, 10), monster(2, 1, 7)],
+      players: [player(1, 6, 6)]
     }
 
     socket
@@ -137,6 +144,22 @@ defmodule PhoenixQuestWeb.GameLive do
       |> game_loop()
 
     {:noreply, new_socket}
+  end
+
+  def handle_event("click_block", %{"x" => x, "y" => y}, socket) do
+    new_socket =
+      socket
+      |> move(x, y)
+      |> game_loop()
+
+    {:noreply, new_socket}
+  end
+
+  defp move(socket, x, y) do
+    # abort if x & y are not allowed
+    # queue appropriate command?
+    # or just queue it and abort it in the game loop...
+    queue_command(socket, :left)
   end
 
   defp update_size(socket, width) do
@@ -270,12 +293,12 @@ defmodule PhoenixQuestWeb.GameLive do
     assign(socket, :blocks, blocks)
   end
 
-  defp player(x, y) do
-    %{type: :player, x: x, y: y, width: @width}
+  defp player(id, x, y) do
+    %{type: :player, id: id, x: x, y: y, width: @width}
   end
 
-  defp monster(x, y) do
-    %{type: :monster, x: x, y: y, width: @width}
+  defp monster(id, x, y) do
+    %{type: :monster, id: id, x: x, y: y, width: @width}
   end
 
   defp wall(x_idx, y_idx, width) do

@@ -5,6 +5,8 @@ https://steamcommunity.com/sharedfiles/filedetails/?id=420985267
 
 ## First version
 add movement constraints (2x6 roll max)
+how to do magic?
+how to do combat?
 allow player action
 combat?
 improve furnature
