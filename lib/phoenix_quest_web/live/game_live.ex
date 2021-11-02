@@ -157,14 +157,16 @@ defmodule PhoenixQuestWeb.GameLive do
   end
 
   def handle_event("click_block", %{"x" => x, "y" => y}, socket) do
+    {xint, ""} = Integer.parse(x)
+    {yint, ""} = Integer.parse(y)
+
     Logger.debug("click_block: #{x}, #{y}")
 
-    new_socket = case { Integer.parse(x), Integer.parse(y) } do
-      {{xint, ""}, {yint, ""}} -> move(socket, xint, yint)
-      { _, _ } -> socket
-    end
+    new_socket = socket
+                 |> move(xint, yint)
+                 |> game_loop
 
-    {:noreply, game_loop(new_socket)}
+    {:noreply, new_socket}
   end
 
   defp move(socket, x, y) do
