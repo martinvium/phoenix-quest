@@ -90,8 +90,8 @@ defmodule PhoenixQuestWeb.GameLive do
             phx-click="click_block"
             phx-value-x={block.x}
             phx-value-y={block.y}
-            style={"left: #{block.x}px;
-                    top: #{block.y}px;
+            style={"left: #{block.left}px;
+                    top: #{block.top}px;
                     width: #{block.width}px;
                     height: #{block.width}px;"}
         ></div>
@@ -114,8 +114,8 @@ defmodule PhoenixQuestWeb.GameLive do
       current_player: 0,
       moves: [],
       move_roll: 0,
-      monsters: [monster(1, 5, 10), monster(2, 1, 7)],
-      players: [player(1, 6, 6)]
+      monsters: [monster(1, 5, 10, @width), monster(2, 1, 7, @width)],
+      players: [player(1, 6, 6, @width)]
     }
 
     socket
@@ -146,20 +146,38 @@ defmodule PhoenixQuestWeb.GameLive do
     {:noreply, new_socket}
   end
 
-  def handle_event("click_block", %{"x" => x, "y" => y}, socket) do
-    new_socket =
-      socket
-      |> move(x, y)
-      |> game_loop()
+  def handle_event("click_player", %{"id" => id}, socket) do
+    Logger.debug("click_player: #{id}")
+    {:noreply, game_loop(socket)}
+  end
 
-    {:noreply, new_socket}
+  def handle_event("click_monster", %{"id" => id}, socket) do
+    Logger.debug("click_monster: #{id}")
+    {:noreply, game_loop(socket)}
+  end
+
+  def handle_event("click_block", %{"x" => x, "y" => y}, socket) do
+    Logger.debug("click_block: #{x}, #{y}")
+
+    new_socket = case { Integer.parse(x), Integer.parse(y) } do
+      {{xint, ""}, {yint, ""}} -> move(socket, xint, yint)
+      { _, _ } -> socket
+    end
+
+    {:noreply, game_loop(new_socket)}
   end
 
   defp move(socket, x, y) do
-    # abort if x & y are not allowed
-    # queue appropriate command?
-    # or just queue it and abort it in the game loop...
-    queue_command(socket, :left)
+    { row, col } = coord(socket)
+    Logger.debug("move<current>: #{col}, #{row}")
+
+    cond do
+      { col, row } == { x + 1, y } -> queue_command(socket, :left)
+      { col, row } == { x - 1, y } -> queue_command(socket, :right)
+      { col, row } == { x, y + 1 } -> queue_command(socket, :up)
+      { col, row } == { x, y - 1 } -> queue_command(socket, :down)
+      true -> socket
+    end
   end
 
   defp update_size(socket, width) do
@@ -188,12 +206,14 @@ defmodule PhoenixQuestWeb.GameLive do
   defp disarm_trap(socket), do: socket
 
   defp queue_command(socket, command) do
+    Logger.debug("queue_command: #{command}")
     update(socket, :commands, fn
       [^command | rest] -> [command | rest]
       rest -> rest ++ [command]
     end)
   end
 
+  defp game_loop(%{assigns: %{commands: []}} = socket), do: socket
   defp game_loop(socket) do
     [next_command | rest_commands] = socket.assigns.commands
     {row_before, col_before} = coord(socket)
@@ -202,7 +222,7 @@ defmodule PhoenixQuestWeb.GameLive do
     maybe_row = row(row_before, next_command)
     maybe_col = col(col_before, next_command)
 
-    Logger.debug "#{maybe_row}, #{maybe_col}: #{get_tile_type(socket, maybe_row, maybe_col)}"
+    Logger.debug "collision_check: #{maybe_row}, #{maybe_col}: #{get_tile_type(socket, maybe_row, maybe_col)}"
     {row, col, collision} =
       case get_tile_type(socket, maybe_row, maybe_col) do
         :wall -> {row_before, col_before, :wall}
@@ -223,7 +243,6 @@ defmodule PhoenixQuestWeb.GameLive do
   end
 
   defp move_player(socket, {row, row}, {col, col}), do: socket
-
   defp move_player(socket, {_row_before, row}, {_col_before, col}) do
     players = Enum.reduce(socket.assigns.players, [], fn
       %{ type: :player } = player, acc -> [%{player | y: row, x: col} | acc]
@@ -293,31 +312,39 @@ defmodule PhoenixQuestWeb.GameLive do
     assign(socket, :blocks, blocks)
   end
 
-  defp player(id, x, y) do
-    %{type: :player, id: id, x: x, y: y, width: @width}
+  defp player(id, x, y, width) do
+    unit(:player, id, x, y, width)
   end
 
-  defp monster(id, x, y) do
-    %{type: :monster, id: id, x: x, y: y, width: @width}
+  defp monster(id, x, y, width) do
+    unit(:monster, id, x, y, width)
   end
 
-  defp wall(x_idx, y_idx, width) do
-    %{type: :wall, x: x_idx * width, y: y_idx * width, width: width}
+  def unit(type, id, x, y, width) do
+    %{type: type, id: id, x: x, y: y, left: x * width, top: y * width, width: width}
   end
 
-  defp empty(x_idx, y_idx, width) do
-    %{type: :empty, x: x_idx * width, y: y_idx * width, width: width}
+  defp wall(x, y, width) do
+    block(:wall, x, y, width)
   end
 
-  defp room(x_idx, y_idx, width) do
-    %{type: :room, x: x_idx * width, y: y_idx * width, width: width}
+  defp empty(x, y, width) do
+    block(:empty, x, y, width)
   end
 
-  defp stairway(x_idx, y_idx, width) do
-    %{type: :stairway, x: x_idx * width, y: y_idx * width, width: width}
+  defp room(x, y, width) do
+    block(:room, x, y, width)
   end
 
-  defp furnature(x_idx, y_idx, width) do
-    %{type: :furnature, x: x_idx * width, y: y_idx * width, width: width}
+  defp stairway(x, y, width) do
+    block(:stairway, x, y, width)
+  end
+
+  defp furnature(x, y, width) do
+    block(:furnature, x, y, width)
+  end
+
+  defp block(type, x_idx, y_idx, width) do
+    %{type: type, x: x_idx, y: y_idx, left: x_idx * width, top: y_idx * width, width: width}
   end
 end
