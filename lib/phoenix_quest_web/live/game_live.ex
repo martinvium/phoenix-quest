@@ -63,9 +63,10 @@ defmodule PhoenixQuestWeb.GameLive do
         <input type="range" min="5" max="50" name="width" value={@width} />
         <%= @width %>px
       </form>
+      <input type="button" phx-click="end_turn" value="End turn"/>
     </div>
     <div class="game-container" phx-window-keydown="keydown">
-      <h3 class="score" style={"font-size: #{@width-2}px;"}>Moves left <%= @moves_left %> of <%= format_rolls(@movement_roll) %></h3>
+      <h3 class="score" style={"font-size: #{@width-2}px;"}>Moves left <%= @moves_left %> of <%= format_rolls(@movement_roll) %>, turn: <%= @turn %></h3>
       <%= for player <- @players do %>
         <div class={"block #{player.type}"}
             phx-click="click_player"
@@ -165,6 +166,10 @@ defmodule PhoenixQuestWeb.GameLive do
     {:noreply, new_game(socket)}
   end
 
+  def handle_event("end_turn", _, socket) do
+    {:noreply, socket |> next_turn }
+  end
+
   def handle_event("keydown", %{"key" => key}, socket) do
     new_socket =
       socket
@@ -221,6 +226,7 @@ defmodule PhoenixQuestWeb.GameLive do
   defp keydown(socket, "ArrowDown"), do: queue_command(socket, :down)
   defp keydown(socket, "ArrowUp"), do: queue_command(socket, :up)
   defp keydown(socket, "ArrowRight"), do: queue_command(socket, :right)
+  defp keydown(socket, "Enter"), do: next_turn(socket)
   defp keydown(socket, "1"), do: attack(socket)
   defp keydown(socket, "2"), do: cast_spell(socket)
   defp keydown(socket, "3"), do: search_treasure(socket)
