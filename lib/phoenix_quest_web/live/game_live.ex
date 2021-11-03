@@ -246,34 +246,41 @@ defmodule PhoenixQuestWeb.GameLive do
   defp game_loop(%{assigns: %{commands: []}} = socket), do: socket
   defp game_loop(socket) do
     [next_command | rest_commands] = socket.assigns.commands
-    {row_before, col_before} = coord(socket)
 
-    # only for movement?
-    maybe_row = row(row_before, next_command)
-    maybe_col = col(col_before, next_command)
-
-    Logger.debug "collision_check: #{maybe_row}, #{maybe_col}: #{get_tile_type(socket, maybe_row, maybe_col)}"
-    {row, col, collision, consumed} =
-      case get_tile_type(socket, maybe_row, maybe_col) do
-        :wall -> {row_before, col_before, :wall, 0}
-        :stairway -> {maybe_row, maybe_col, :stairway, 1}
-        :furnature -> {row_before, col_before, :furnature, 0}
-        :player -> {row_before, col_before, :player, 0}
-        :monster -> {maybe_row, maybe_col, :monster, 1}
-        :empty -> {maybe_row, maybe_col, :empty, 1}
-        :room -> {maybe_row, maybe_col, :room, 1}
-      end
+    {row, col, collision, consumed} = calc_move(socket, next_command)
 
     socket
-    |> move_player({row_before, row}, {col_before, col})
+    |> move_player(row, col, consumed)
     |> assign(row: row, col: col, commands: rest_commands)
     |> update(:moves, fn moves -> [consumed | moves] end)
     |> update(:moves_left, fn count -> count - consumed end)
     |> handle_collision(collision)
   end
 
-  defp move_player(socket, {row, row}, {col, col}), do: socket
-  defp move_player(socket, {_row_before, row}, {_col_before, col}) do
+  defp calc_move(socket, next_command) do
+    {row_before, col_before} = coord(socket)
+
+    { maybe_row, maybe_col } = maybe_coord(row_before, col_before, next_command, socket.assigns.moves_left)
+
+    Logger.debug "collision_check: #{maybe_row}, #{maybe_col}: #{get_tile_type(socket, maybe_row, maybe_col)}"
+    case get_tile_type(socket, maybe_row, maybe_col) do
+      :wall -> {row_before, col_before, :wall, 0}
+      :stairway -> {maybe_row, maybe_col, :stairway, 1}
+      :furnature -> {row_before, col_before, :furnature, 0}
+      :player -> {row_before, col_before, :player, 0}
+      :monster -> {maybe_row, maybe_col, :monster, 1}
+      :empty -> {maybe_row, maybe_col, :empty, 1}
+      :room -> {maybe_row, maybe_col, :room, 1}
+    end
+  end
+
+  defp maybe_coord(row_before, col_before, next_command, 0), do: { row_before, col_before }
+  defp maybe_coord(row_before, col_before, next_command, moves_left) do
+    { row(row_before, next_command), col(col_before, next_command)}
+  end
+
+  defp move_player(socket, row, col, 0), do: socket
+  defp move_player(socket, row, col, consumed) when is_integer(consumed) do
     players = Enum.reduce(socket.assigns.players, [], fn
       %{ type: :player } = player, acc -> [%{player | y: row, x: col} | acc]
       player, acc -> [player | acc]
