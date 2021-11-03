@@ -65,6 +65,7 @@ defmodule PhoenixQuestWeb.GameLive do
       </form>
     </div>
     <div class="game-container" phx-window-keydown="keydown">
+      <h3 class="score" style={"font-size: #{@width-2}px;"}>Moves left <%= @moves_left %> of <%= format_rolls(@movement_roll) %></h3>
       <%= for player <- @players do %>
         <div class={"block #{player.type}"}
             phx-click="click_player"
@@ -111,9 +112,11 @@ defmodule PhoenixQuestWeb.GameLive do
       width: @width,
       row: 6,
       col: 6,
+      turn: 0,
       current_player: 0,
       moves: [],
-      move_roll: 0,
+      moves_left: 0,
+      movement_roll: [],
       monsters: [monster(1, 5, 10, @width), monster(2, 1, 7, @width)],
       players: [player(1, 6, 6, @width)]
     }
@@ -121,6 +124,31 @@ defmodule PhoenixQuestWeb.GameLive do
     socket
     |> assign(defaults)
     |> build_board()
+    |> next_turn()
+  end
+
+  def next_turn(socket) do
+    Logger.debug("next_turn: #{socket.assigns.turn}, #{length(socket.assigns.players)}")
+
+    next_turn = socket.assigns.turn + 1
+    movement_roll = roll([6, 6])
+
+    socket
+    |> assign(
+      turn: next_turn,
+      current_player: rem(socket.assigns.turn, length(socket.assigns.players)),
+      movement_roll: movement_roll,
+      moves_left: Enum.sum(movement_roll )
+    )
+  end
+
+  defp roll(dice) do
+    dice
+    |> Enum.map(fn sides -> Enum.random(1..sides) end)
+  end
+
+  defp format_rolls(rolls) do
+    "#{rolls |> Enum.sum} (#{rolls |> Enum.join(" + ")})"
   end
 
   def handle_event("update_settings", %{"width" => width}, socket) do
