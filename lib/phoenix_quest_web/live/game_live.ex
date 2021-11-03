@@ -138,7 +138,7 @@ defmodule PhoenixQuestWeb.GameLive do
       turn: next_turn,
       current_player: rem(socket.assigns.turn, length(socket.assigns.players)),
       movement_roll: movement_roll,
-      moves_left: Enum.sum(movement_roll )
+      moves_left: Enum.sum(movement_roll)
     )
   end
 
@@ -148,7 +148,7 @@ defmodule PhoenixQuestWeb.GameLive do
   end
 
   defp format_rolls(rolls) do
-    "#{rolls |> Enum.sum} (#{rolls |> Enum.join(" + ")})"
+    "#{rolls |> Enum.sum()} (#{rolls |> Enum.join(" + ")})"
   end
 
   def handle_event("update_settings", %{"width" => width}, socket) do
@@ -190,22 +190,23 @@ defmodule PhoenixQuestWeb.GameLive do
 
     Logger.debug("click_block: #{x}, #{y}")
 
-    new_socket = socket
-                 |> move(xint, yint)
-                 |> game_loop
+    new_socket =
+      socket
+      |> move(xint, yint)
+      |> game_loop
 
     {:noreply, new_socket}
   end
 
   defp move(socket, x, y) do
-    { row, col } = coord(socket)
+    {row, col} = coord(socket)
     Logger.debug("move<current>: #{col}, #{row}")
 
     cond do
-      { col, row } == { x + 1, y } -> queue_command(socket, :left)
-      { col, row } == { x - 1, y } -> queue_command(socket, :right)
-      { col, row } == { x, y + 1 } -> queue_command(socket, :up)
-      { col, row } == { x, y - 1 } -> queue_command(socket, :down)
+      {col, row} == {x + 1, y} -> queue_command(socket, :left)
+      {col, row} == {x - 1, y} -> queue_command(socket, :right)
+      {col, row} == {x, y + 1} -> queue_command(socket, :up)
+      {col, row} == {x, y - 1} -> queue_command(socket, :down)
       true -> socket
     end
   end
@@ -237,6 +238,7 @@ defmodule PhoenixQuestWeb.GameLive do
 
   defp queue_command(socket, command) do
     Logger.debug("queue_command: #{command}")
+
     update(socket, :commands, fn
       [^command | rest] -> [command | rest]
       rest -> rest ++ [command]
@@ -244,6 +246,7 @@ defmodule PhoenixQuestWeb.GameLive do
   end
 
   defp game_loop(%{assigns: %{commands: []}} = socket), do: socket
+
   defp game_loop(socket) do
     [next_command | rest_commands] = socket.assigns.commands
 
@@ -260,9 +263,13 @@ defmodule PhoenixQuestWeb.GameLive do
   defp calc_move(socket, next_command) do
     {row_before, col_before} = coord(socket)
 
-    { maybe_row, maybe_col } = maybe_coord(row_before, col_before, next_command, socket.assigns.moves_left)
+    {maybe_row, maybe_col} =
+      maybe_coord(row_before, col_before, next_command, socket.assigns.moves_left)
 
-    Logger.debug "collision_check: #{maybe_row}, #{maybe_col}: #{get_tile_type(socket, maybe_row, maybe_col)}"
+    Logger.debug(
+      "collision_check: #{maybe_row}, #{maybe_col}: #{get_tile_type(socket, maybe_row, maybe_col)}"
+    )
+
     case get_tile_type(socket, maybe_row, maybe_col) do
       :wall -> {row_before, col_before, :wall, 0}
       :stairway -> {maybe_row, maybe_col, :stairway, 1}
@@ -274,17 +281,20 @@ defmodule PhoenixQuestWeb.GameLive do
     end
   end
 
-  defp maybe_coord(row_before, col_before, next_command, 0), do: { row_before, col_before }
+  defp maybe_coord(row_before, col_before, next_command, 0), do: {row_before, col_before}
+
   defp maybe_coord(row_before, col_before, next_command, moves_left) do
-    { row(row_before, next_command), col(col_before, next_command)}
+    {row(row_before, next_command), col(col_before, next_command)}
   end
 
   defp move_player(socket, row, col, 0), do: socket
+
   defp move_player(socket, row, col, consumed) when is_integer(consumed) do
-    players = Enum.reduce(socket.assigns.players, [], fn
-      %{ type: :player } = player, acc -> [%{player | y: row, x: col} | acc]
-      player, acc -> [player | acc]
-    end)
+    players =
+      Enum.reduce(socket.assigns.players, [], fn
+        %{type: :player} = player, acc -> [%{player | y: row, x: col} | acc]
+        player, acc -> [player | acc]
+      end)
 
     assign(socket, :players, players)
   end
