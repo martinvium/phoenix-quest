@@ -253,22 +253,22 @@ defmodule PhoenixQuestWeb.GameLive do
     maybe_col = col(col_before, next_command)
 
     Logger.debug "collision_check: #{maybe_row}, #{maybe_col}: #{get_tile_type(socket, maybe_row, maybe_col)}"
-    {row, col, collision} =
+    {row, col, collision, consumed} =
       case get_tile_type(socket, maybe_row, maybe_col) do
-        :wall -> {row_before, col_before, :wall}
-        :stairway -> {maybe_row, maybe_col, :stairway}
-        :furnature -> {row_before, col_before, :furnature}
-        :player -> {row_before, col_before, :player}
-        :monster -> {maybe_row, maybe_col, :monster}
-        :empty -> {maybe_row, maybe_col, :empty}
-        :room -> {maybe_row, maybe_col, :room}
+        :wall -> {row_before, col_before, :wall, 0}
+        :stairway -> {maybe_row, maybe_col, :stairway, 1}
+        :furnature -> {row_before, col_before, :furnature, 0}
+        :player -> {row_before, col_before, :player, 0}
+        :monster -> {maybe_row, maybe_col, :monster, 1}
+        :empty -> {maybe_row, maybe_col, :empty, 1}
+        :room -> {maybe_row, maybe_col, :room, 1}
       end
 
     socket
     |> move_player({row_before, row}, {col_before, col})
-    |> update(:row, fn _ -> row end)
-    |> update(:col, fn _ -> col end)
-    |> update(:commands, fn _ -> rest_commands end)
+    |> assign(row: row, col: col, commands: rest_commands)
+    |> update(:moves, fn moves -> [consumed | moves] end)
+    |> update(:moves_left, fn count -> count - consumed end)
     |> handle_collision(collision)
   end
 
