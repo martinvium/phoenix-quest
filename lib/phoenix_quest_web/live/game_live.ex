@@ -64,9 +64,10 @@ defmodule PhoenixQuestWeb.GameLive do
         <%= @width %>px
       </form>
       <input type="button" phx-click="end_turn" value="End turn"/>
+      <input type="button" phx-click="undo" value="Undo"/>
     </div>
     <div class="game-container" phx-window-keydown="keydown">
-      <h3 class="score" style={"font-size: #{@width-2}px;"}>Moves left <%= @moves_left %> of <%= format_rolls(@movement_roll) %>, turn: <%= @turn %></h3>
+      <h3 class="score">Moves left <%= @moves_left %> of <%= format_rolls(@movement_roll) %>, turn: <%= @turn %></h3>
       <%= for player <- @players do %>
         <div class={"block #{player.type}"}
             phx-click="click_player"
@@ -115,7 +116,7 @@ defmodule PhoenixQuestWeb.GameLive do
       col: 6,
       turn: 0,
       current_player: 0,
-      moves: [],
+      moves: [{6, 6}],
       moves_left: 0,
       movement_roll: [],
       monsters: [monster(1, 5, 10, @width), monster(2, 1, 7, @width)],
@@ -126,26 +127,6 @@ defmodule PhoenixQuestWeb.GameLive do
     |> assign(defaults)
     |> build_board()
     |> next_turn()
-  end
-
-  def next_turn(socket) do
-    Logger.debug("next_turn: #{socket.assigns.turn}, #{length(socket.assigns.players)}")
-
-    next_turn = socket.assigns.turn + 1
-    movement_roll = roll([6, 6])
-
-    socket
-    |> assign(
-      turn: next_turn,
-      current_player: rem(socket.assigns.turn, length(socket.assigns.players)),
-      movement_roll: movement_roll,
-      moves_left: Enum.sum(movement_roll)
-    )
-  end
-
-  defp roll(dice) do
-    dice
-    |> Enum.map(fn sides -> Enum.random(1..sides) end)
   end
 
   defp format_rolls(rolls) do
@@ -168,6 +149,10 @@ defmodule PhoenixQuestWeb.GameLive do
 
   def handle_event("end_turn", _, socket) do
     {:noreply, socket |> next_turn }
+  end
+
+  def handle_event("undo", _, socket) do
+    {:noreply, socket |> undo_last_command }
   end
 
   def handle_event("keydown", %{"key" => key}, socket) do
@@ -261,7 +246,7 @@ defmodule PhoenixQuestWeb.GameLive do
     socket
     |> move_player(row, col, consumed)
     |> assign(row: row, col: col, commands: rest_commands)
-    |> update(:moves, fn moves -> [consumed | moves] end)
+    |> update(:moves, fn moves -> [{ row, col} | moves] end)
     |> update(:moves_left, fn count -> count - consumed end)
     |> handle_collision(collision)
   end
@@ -287,13 +272,31 @@ defmodule PhoenixQuestWeb.GameLive do
     end
   end
 
-  defp maybe_coord(row_before, col_before, next_command, 0), do: {row_before, col_before}
+  defp maybe_coord(row_before, col_before, _, 0), do: {row_before, col_before}
 
-  defp maybe_coord(row_before, col_before, next_command, moves_left) do
+  defp maybe_coord(row_before, col_before, next_command, _) do
     {row(row_before, next_command), col(col_before, next_command)}
   end
 
-  defp move_player(socket, row, col, 0), do: socket
+  defp undo_last_command(socket) do
+    socket |> undo_last_movement(socket.assigns.moves, 1)
+  end
+
+  defp undo_last_movement(socket, [], _), do: socket
+
+  defp undo_last_movement(socket, [_ | []], _), do: socket
+
+  defp undo_last_movement(socket, [last | rest], consumed) do
+    [{row, col } | _] = rest
+
+    socket
+    |> move_player(row, col, consumed)
+    |> assign(row: row, col: col, moves: rest)
+    |> update(:moves_left, fn count -> count + consumed end)
+    |> game_loop()
+  end
+
+  defp move_player(socket, _, _, 0), do: socket
 
   defp move_player(socket, row, col, consumed) when is_integer(consumed) do
     players =
@@ -304,6 +307,36 @@ defmodule PhoenixQuestWeb.GameLive do
 
     assign(socket, :players, players)
   end
+
+  def next_turn(socket) do
+    Logger.debug("next_turn: #{socket.assigns.turn}, #{length(socket.assigns.players)}")
+
+    next_turn = socket.assigns.turn + 1
+    movement_roll = roll([6, 6])
+
+    socket
+    |> assign(
+      turn: next_turn,
+      current_player: rem(socket.assigns.turn, length(socket.assigns.players)),
+      movement_roll: movement_roll,
+      moves_left: Enum.sum(movement_roll)
+    )
+  end
+
+  defp reverse_command(command) do
+    case command do
+      :left -> :right
+      :right -> :left
+      :up -> :down
+      :down -> :up
+    end
+  end
+
+  defp roll(dice) do
+    dice
+    |> Enum.map(fn sides -> Enum.random(1..sides) end)
+  end
+
 
   def handle_collision(socket, :wall), do: socket
   def handle_collision(socket, :stairway), do: game_over(socket)
